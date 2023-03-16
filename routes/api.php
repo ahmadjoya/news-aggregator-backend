@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\PreferencesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,3 +26,7 @@ Route::post('/register',[AuthController::class,'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/news', [NewsController::class, 'news']);
+
+Route::get('/search', [NewsController::class, 'search']);
+
+Route::middleware('auth:sanctum')->get('/news-by-preferences', [PreferencesController::class, 'preferences']);

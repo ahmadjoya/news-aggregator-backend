@@ -6,16 +6,22 @@ function Guardian($sourceName, $data){
 
     for($i = 0; $i < count($arrange); $i++){
         $image_url="";
-        if(count($arrange[$i]->blocks->main->elements[0]->assets)>0){
-            $image_url = $arrange[$i]->blocks->main->elements[0]->assets[0]->file;
+        $pillarName = "";
+        if(property_exists($arrange[$i], "blocks")){
+            if(count($arrange[$i]->blocks->main->elements[0]->assets)>0){
+                $image_url = $arrange[$i]->blocks->main->elements[0]->assets[0]->file;
+            }
         }
 
+        if(property_exists($arrange[$i], "pillarName")){
+            $pillarName = $arrange[$i]->pillarName;
+        }
         array_push($new_data, [
             "image"=>$image_url,
             "title"=>$arrange[$i]->webTitle,
             "description"=>$arrange[$i]->webTitle,
             "date"=>$arrange[$i]->webPublicationDate,
-            "category"=>$arrange[$i]->pillarName,
+            "category"=>$pillarName,
             "source"=>$sourceName,
             "author"=>"Admin",
             "sourceLink" => $arrange[$i]->webUrl,
@@ -27,8 +33,28 @@ function Guardian($sourceName, $data){
     return $new_data;
 }
 
-function BBC($data){
-    return $data->response->results;
+function NewsApi($data){
+    $arrange = $data->articles;
+    $new_data = array();
+
+    for($i = 0; $i < count($arrange); $i++){
+
+
+        array_push($new_data, [
+            "image"=>$arrange[$i]->urlToImage,
+            "title"=>$arrange[$i]->title,
+            "description"=>$arrange[$i]->description,
+            "date"=>$arrange[$i]->publishedAt,
+            "category"=>"unknown",
+            "source"=>$arrange[$i]->source->name,
+            "author"=>$arrange[$i]->author,
+            "sourceLink" => $arrange[$i]->url,
+            // "apiURL" => $arrange[$i]->apiUrl,
+            // "data"=>$arrange[$i]
+        ]);
+    }
+
+    return $new_data;
 }
 
 function NYT($data){
@@ -41,8 +67,8 @@ if(!function_exists('restructure_data')){
             case('Guardian'):
                 return Guardian($sourceName, $data);
                 break;
-            case("BBC"):
-                return ['sourceName'=>$sourceName, 'data'=>BBC($data)];
+            case("Newsapi.org"):
+                return NewsApi($data);
                 break;
             default:
                 return ['sourceName'=>$sourceName, 'data'=>NYT($data)];
