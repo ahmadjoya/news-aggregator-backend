@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Preferences;
 use Illuminate\Http\Request;
+use Storage;
 
 class PreferencesController extends Controller
 {
@@ -12,6 +13,10 @@ class PreferencesController extends Controller
         $user = $request->user();
 
         $preferences = Preferences::orderBy('id','desc')->where('user_id', '=', $user->id)->first();
+
+        $json = Storage::disk('local')->get('sources.json');
+        $sources_data = json_decode($json, true);
+
         return $preferences;
     }
 }

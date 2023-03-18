@@ -39,7 +39,6 @@ function NewsApi($data){
 
     for($i = 0; $i < count($arrange); $i++){
 
-
         array_push($new_data, [
             "image"=>$arrange[$i]->urlToImage,
             "title"=>$arrange[$i]->title,
@@ -58,7 +57,41 @@ function NewsApi($data){
 }
 
 function NYT($data){
-    return $data->response->results;
+    $arrange = $data->response->docs;
+    $new_data = array();
+
+    for($i = 0; $i < count($arrange); $i++){
+        $image_url="";
+        $category = "";
+        $author = "";
+        if(property_exists($arrange[$i], "multimedia")){
+            if(count($arrange[$i]->multimedia)>0){
+                $image_url = $arrange[$i]->multimedia[0]->url;
+            }
+        }
+
+        if(property_exists($arrange[$i], "section_name")){
+            $category = $arrange[$i]->section_name;
+        }
+        if(property_exists($arrange[$i], "byline")){
+            $author = $arrange[$i]->byline->original;
+        }
+
+        array_push($new_data, [
+            "image"=>$image_url,
+            "title"=>$arrange[$i]->headline->main,
+            "description"=>$arrange[$i]->lead_paragraph,
+            "date"=> $arrange[$i]->pub_date,
+            "category"=>$category,
+            "source"=>$arrange[$i]->source,
+            "author"=> $author,
+            "sourceLink" => $arrange[$i]->web_url,
+            "apiURL" => false,
+            // "data"=>$arrange[$i]
+        ]);
+    }
+
+    return $new_data;
 }
 
 if(!function_exists('restructure_data')){
@@ -70,8 +103,9 @@ if(!function_exists('restructure_data')){
             case("Newsapi.org"):
                 return NewsApi($data);
                 break;
-            default:
-                return ['sourceName'=>$sourceName, 'data'=>NYT($data)];
+            case("NYT"):
+                return NYT($data);
+                break;
             }
     }
 }

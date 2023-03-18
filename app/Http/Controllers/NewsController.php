@@ -34,8 +34,6 @@ class NewsController extends Controller
 
     public function search(Request $request){
         $q = "";
-        // $category = $request->$request->q;
-        // $source = $request->source;
         $date = "";
         if($request->q){
             $q = $request->q;
@@ -43,12 +41,7 @@ class NewsController extends Controller
         if($request->date){
             $date = $request->date;
         };
-        // $incomming = array(
-        //     "q" => $request->q,
-        // // "category" => $request->$request->q,
-        // // "source" => $request->source,
-        // "date" => $request->date,
-        // );
+
         $json = Storage::disk('local')->get('sources_for_search.json');
         $sources_data = json_decode($json, true);
 
@@ -56,25 +49,35 @@ class NewsController extends Controller
 
         for($i = 0; $i < count($sources_data); $i++){
             $url = "";
+
             if($sources_data[$i]["keyBase"] == true){
                 if($sources_data[$i]["sourceName"] == "Guardian"){
                     $url = $sources_data[$i]["URL"]."?q=".$q."&date=".$date."&show-blocks=main&".$sources_data[$i]["apiKey"];
-
                 }
+
                 elseif($sources_data[$i]["sourceName"] == "Newsapi.org"){
                     $url = $sources_data[$i]["URL"]."?q=".$q."&from=".$date."&sortBy=popularity&".$sources_data[$i]["apiKey"];
-                    // dd($url);
+                }
+
+                elseif($sources_data[$i]["sourceName"] == "NYT"){
+                    $dateToNum = explode("-", $date);
+                    $finalDate = join("",$dateToNum);
+                    if($date){
+                        $url = $sources_data[$i]["URL"]."?q=".$q."&begin_date=".$finalDate."&".$sources_data[$i]["apiKey"];
+                    }else{
+                        $url = $sources_data[$i]["URL"]."?q=".$q."&".$sources_data[$i]["apiKey"];
+                    }
+                    // echo $url;
                 }
             }
 
             $response = Http::get($url);
-            // print_r($response);
-            // error_log($response);
+            // dd($response);
             $restructured = restructure_data($sources_data[$i]["sourceName"], $response->object());
             array_push($data, ...$restructured);
         };
 
         return response()->json($data);
-        // return response()->json($incomming);
+
     }
 }
