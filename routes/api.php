@@ -30,3 +30,6 @@ Route::get('/news', [NewsController::class, 'news']);
 Route::get('/search', [NewsController::class, 'search']);
 
 Route::middleware('auth:sanctum')->get('/news-by-preferences', [PreferencesController::class, 'preferences']);
+
+Route::middleware('auth:sanctum')->post('/update-user-info', [AuthController::class, 'updateUserInfo']);
+Route::middleware('auth:sanctum')->post('/update-user-password', [AuthController::class, 'changePassword']);

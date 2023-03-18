@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Models\User;
 
+
 class AuthController extends Controller
 {
     public function register(Request $request){
@@ -42,12 +43,53 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request['email'])->firstOrFail();
-                $token = $user->createToken('authToken')->plainTextToken;
+            $token = $user->createToken('authToken')->plainTextToken;
 
             return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user
             ]);
+        }
+
+        public function updateUserInfo(Request $request){
+
+            $validated = $request->validate([
+                'email'=>'string|email|unique:users',
+            ]);
+
+            User::where('id', $request->user()->id)->update([
+                'email' => $request->email
+             ]);
+
+            return response()->json([
+                'email' => $request->email
+            ]);
+        }
+
+        public function changePassword(Request $request){
+            $user = User::findOrFail($request->user()->id);
+
+            $post_data = $request->validate([
+                'currentPassword'=> 'required|string',
+                'newPassword'=> "required|string|min:8"
+            ]);
+
+
+            if(Hash::check($request->currentPassword, $user->password)){
+                $user->fill([
+                    'password' => Hash::make($request->newPassword)
+                    ])->save();
+                return response()->json([
+                    'success' => true,
+                ]);
+
+           }else{
+
+            return response()->json([
+                'message' => 'Password mis matched'
+              ], 401);
+
+           }
         }
 }
