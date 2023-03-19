@@ -1,55 +1,36 @@
-# Use an official PHP runtime as a parent image
-FROM php:8.1.0-apache
+FROM php:8.1-fpm-alpine
 
-# Set the working directory to /var/www/html
+# Install necessary packages and extensions
+RUN apk update && \
+    apk add --no-cache --virtual .build-deps \
+    $PHPIZE_DEPS \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libzip-dev \
+    linux-headers \
+    && apk add --no-cache \
+    bash \
+    mysql-client \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd pdo_mysql zip \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug
+
+# Set the working directory and copy the application code
 WORKDIR /var/www/html
-
-# Copy the local Laravel files to the container's working directory
 COPY . .
 
-# Update package list and install required packages
-RUN apt-get update && apt-get install -y \
-    git \
-    zip \
-    unzip \
-    libzip-dev \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libmcrypt-dev \
-    libcurl4-openssl-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libpq-dev \
-    curl
+# Set the ownership and permissions for storage and cache directories
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Install required PHP extensions
-RUN docker-php-ext-install \
-    pdo_mysql \
-    mysqli \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    zip
+# Set the MySQL server host, port, username, password, and database name
+ENV DB_HOST=mysql
+ENV DB_PORT=3306
+ENV DB_USERNAME=root
+ENV DB_PASSWORD=
+ENV DB_DATABASE=joya_test_laravel
 
-# Enable required Apache modules
-RUN a2enmod rewrite
-
-# Set the Apache server's document root
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-
-# Copy the .env.example file to .env
-COPY .env.example .env
-
-# Generate the application key
-RUN php artisan key:generate
-
-# Set the ownership and permissions of the Laravel files
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage
-
-# Expose port 80 and start the Apache server
-EXPOSE 80
-CMD ["apache2-foreground"]
+# Start the PHP-FPM process
+CMD ["php-fpm"]
